@@ -5,8 +5,10 @@ import unittest
 
 class NewVisiorTest(LiveServerTestCase):
 
+    BROWSER_PATH = '/cygdrive/c/work/tools/chromedriver_win32/chromedriver.exe'
+
     def setUp(self):
-        self.browser = webdriver.Chrome('/cygdrive/c/work/tools/chromedriver_win32/chromedriver.exe')
+        self.browser = webdriver.Chrome(self.BROWSER_PATH)
         self.browser.implicitly_wait(3)
 
 
@@ -39,13 +41,12 @@ class NewVisiorTest(LiveServerTestCase):
         # is tying fly-fishing Lures)
         inputbox.send_keys('Buy peacock feathers')
 
-        # When she hits enter, the page updates, and now the page lists
+        # When she hits enter, she is taken to a new URL,
+        # and now the page lists:
         # "1: Buy peacock feathers" as an item in a to-do list
         inputbox.send_keys(Keys.ENTER)
-
-        #import time
-        #time.sleep(10)
-
+        edith_list_url = self.browser.current_url
+        self.assertRegex(edith_list_url, '/lists/.+')
         self.check_for_row_in_list_table('1: Buy peacock feathers')
 
         # There is still a text box inviting her to add another item. She
@@ -58,6 +59,35 @@ class NewVisiorTest(LiveServerTestCase):
         self.check_for_row_in_list_table('1: Buy peacock feathers')
         self.check_for_row_in_list_table('2: Use peacock feathers to make a fly')
 
+        # Now a new user, Francis, comes along to the site.
+
+        ## We use a new browser session to make sure that no information
+        ## of Edith's list is coming through from cookies etc
+        self.browser.quit()
+        self.browser = webdriver.Chrome(self.BROWSER_PATH)
+
+        # Francis visits the home page. There's no sign of Edith's list
+        self.browser.get(self.liver_server_url)
+        page_text = self.browser.find_element_by_tag_name('body').text
+        self.assertNotIn('Buy peacock feathers', page_text)
+        self.assertNotIn('make a fly', page_text)
+
+        # Francis starts a new list by entering a new item. He is less
+        # interesting than Edith...
+        inputbox = self.browser.find_element_by_id('id_new_item')
+        inputbox.send_keys('Buy milk')
+        inputbox.send_keys(Keys.ENTER)
+
+        # Francis gets his own unique URL
+        francis_list_url = self.browser.current_url
+        self.assertRegex(edith_list_url, '/lists/.+')
+        self.assertNotEqual(francis_list_url, edith|_list_url)
+
+        # Again, there is no trace of Edith's list
+        page_text = self.browser.find_element_by_tag_name('body').text
+        self.assertNotIn('Buy peacock feathers', page_text)
+        self.assertNotIn('make a fly', page_text)
+
         # Edith wonders whether the site will remember her list. Then she sees
         # that the site has generated a unique URL for her -- there is some
         # explanatory text to that effect.
@@ -65,9 +95,4 @@ class NewVisiorTest(LiveServerTestCase):
 
         # She visits that URL - her to-do list is still there.
 
-        # Satisfied she goes back to sleep
-
-
-if __name__ == '__main__':
-    unittest.main(warnings='ignore')
-
+        # Satisfied they both go back to sleep
