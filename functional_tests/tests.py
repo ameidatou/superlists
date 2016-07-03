@@ -1,9 +1,10 @@
 from django.test import LiveServerTestCase
+from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 import unittest
 
-class NewVisiorTest(LiveServerTestCase):
+class NewVisiorTest(StaticLiveServerTestCase):
 
     BROWSER_PATH = '/cygdrive/c/work/tools/chromedriver_win32/chromedriver.exe'
 
@@ -13,6 +14,7 @@ class NewVisiorTest(LiveServerTestCase):
 
 
     def tearDown(self):
+        self.browser.refresh()
         self.browser.quit()
 
 
@@ -63,6 +65,7 @@ class NewVisiorTest(LiveServerTestCase):
 
         ## We use a new browser session to make sure that no information
         ## of Edith's list is coming through from cookies etc
+        self.browser.refresh()
         self.browser.quit()
         self.browser = webdriver.Chrome(self.BROWSER_PATH)
 
